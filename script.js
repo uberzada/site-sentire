@@ -70,7 +70,7 @@ const observer = new IntersectionObserver(function (entries) {
 }, { threshold: 0.1 });
 
 // Elementos que ganham animação de entrada
-document.querySelectorAll('.servico-card, .stat-card, .credencial-item').forEach(function (el) {
+document.querySelectorAll('.servico-card, .stat-card, .credencial-item, .zoomable, .atendimento-item-card').forEach(function (el) {
   el.style.opacity = '0';
   el.style.transform = 'translateY(24px)';
   el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
@@ -86,6 +86,7 @@ const cards = track ? track.querySelectorAll('.depoimento-card') : [];
 const dotsContainer = document.getElementById('dep-dots');
 const btnPrev = document.getElementById('dep-prev');
 const btnNext = document.getElementById('dep-next');
+const wrapper = document.querySelector('.depoimentos-wrapper');
 
 let indiceAtual = 0;
 let autoPlay; // variável do autoplay
@@ -102,6 +103,14 @@ if (cards.length > 0) {
     dotsContainer.appendChild(dot);
   });
 
+  // Função para ajustar a altura do wrapper dinamicamente conforme o depoimento ativo
+  function ajustarAlturaWrapper() {
+    if (wrapper && cards[indiceAtual]) {
+      const activeCardHeight = cards[indiceAtual].offsetHeight;
+      wrapper.style.height = activeCardHeight + 'px';
+    }
+  }
+
   // Ir para um depoimento específico
   function irParaDepoimento(indice) {
     indiceAtual = indice;
@@ -111,6 +120,8 @@ if (cards.length > 0) {
     dotsContainer.querySelectorAll('.dep-dot').forEach(function (dot, i) {
       dot.classList.toggle('active', i === indiceAtual);
     });
+
+    ajustarAlturaWrapper();
   }
 
   // Botão anterior
@@ -161,6 +172,10 @@ if (cards.length > 0) {
     }
     reiniciarAutoPlay();
   });
+
+  // Ajusta a altura no redimensionamento da tela e após carregar
+  window.addEventListener('resize', ajustarAlturaWrapper);
+  setTimeout(ajustarAlturaWrapper, 150);
 }
 
 // ----------------------------------------------------------------
@@ -185,4 +200,50 @@ function mostrarToast(mensagem) {
     toast.classList.remove('show');
     setTimeout(function () { toast.remove(); }, 400);
   }, 4000);
+}
+
+
+// ----------------------------------------------------------------
+// FOTOS ZOOM LIGHTBOX
+// ----------------------------------------------------------------
+const zoomableImages = document.querySelectorAll('.zoomable');
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+const lightboxCaption = document.getElementById('lightbox-caption');
+const lightboxClose = document.querySelector('.lightbox-close');
+
+if (zoomableImages.length > 0 && lightbox) {
+  zoomableImages.forEach(function (img) {
+    img.addEventListener('click', function () {
+      lightbox.style.display = 'flex';
+      lightboxImg.src = img.src;
+      lightboxCaption.textContent = img.alt ? img.alt : 'Foto da Dra. Eduarda Goes';
+      document.body.style.overflow = 'hidden'; // bloqueia o scroll da página
+    });
+  });
+
+  const fecharLightbox = function () {
+    lightbox.style.display = 'none';
+    document.body.style.overflow = 'auto'; // restaura o scroll da página
+  };
+
+  if (lightboxClose) {
+    lightboxClose.addEventListener('click', fecharLightbox);
+  }
+  
+  lightbox.addEventListener('click', function (e) {
+    // Fecha se clicar no fundo do modal (fora da imagem de fato)
+    if (e.target === lightbox || e.target.classList.contains('lightbox-close') || e.target === lightboxImg || e.target.classList.contains('lightbox-content')) {
+      if (e.target !== lightboxImg) {
+        fecharLightbox();
+      }
+    }
+  });
+
+  // Fecha ao apertar a tecla Esc
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && lightbox.style.display === 'flex') {
+      fecharLightbox();
+    }
+  });
 }
